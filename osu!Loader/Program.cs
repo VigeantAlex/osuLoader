@@ -30,7 +30,6 @@ namespace osuLoader
             Console.WriteLine("Loaded!");
 
             Type OsuMain             = asm.GetType(AsmEncrypt.class_OsuMain);
-            Type AuthenticodeTools   = asm.GetType(AsmEncrypt.class_AuthenticodeTools);
             Type pWebRequest         = asm.GetType(AsmEncrypt.class_pWebRequest);
             Type BanchoClient        = asm.GetType(AsmEncrypt.class_BanchoClient);
             Type VoidDelegate        = asm.GetType(AsmEncrypt.delegate_VoidDelegate);
@@ -43,9 +42,6 @@ namespace osuLoader
 
             MethodInfo Filename         = OsuMain.GetMethod(AsmEncrypt.method_Filename, BindingFlags.Static | BindingFlags.NonPublic);
             MethodInfo Filename_patched = typeof(MthdPatch).GetMethod("Filename");
-
-            MethodInfo IsTrusted         = AuthenticodeTools.GetMethod(AsmEncrypt.method_IsTrusted, BindingFlags.Static | BindingFlags.Public);
-            MethodInfo IsTrusted_patched = typeof(MthdPatch).GetMethod("IsTrusted");
 
             MethodInfo checkCertificate         = pWebRequest.GetMethod(AsmEncrypt.method_checkCertificate, BindingFlags.Instance | BindingFlags.NonPublic);
             MethodInfo checkCertificate_patched = typeof(MthdPatch).GetMethod("checkCertificate");
@@ -64,12 +60,8 @@ namespace osuLoader
                 int* p_Filename         = (int*)Filename.MethodHandle.Value.ToPointer()         + 2;
                 int* p_Filename_patched = (int*)Filename_patched.MethodHandle.Value.ToPointer() + 2;
 
-                int* p_IsTrusted         = (int*)IsTrusted.MethodHandle.Value.ToPointer()         + 2;
-                int* p_IsTrusted_patched = (int*)IsTrusted_patched.MethodHandle.Value.ToPointer() + 2;
-
                 *p_FullPath  = *p_FullPath_patched;
                 *p_Filename  = *p_Filename_patched;
-                *p_IsTrusted = *p_IsTrusted_patched;
 
                 Console.WriteLine("Patched!");
 
