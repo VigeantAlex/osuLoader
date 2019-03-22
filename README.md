@@ -1,4 +1,6 @@
 # osu!Loader
 Load osu! with patches using .NET's Reflection!
 
-Currently only works with Stable (not fallback) b20190207.2!
+Allows you to switch custom servers on the fly without hosts file and blocks updates.
+
+Only works on latest stable (b20190226.2)!
