@@ -9,7 +9,11 @@ namespace osuLoader
     {
         public static string osuPath = Path.Combine(Directory.GetCurrentDirectory(), "osu!.exe");
 
-        private static string banchoServer = "https://c.ripple.moe";
+        public static string mainServer   = "navisu.moe";
+        public static string banchoServer = "c.navisu.moe";
+        public static string avatarServer = "a.navisu.moe";
+
+        public static Assembly asm;
 
         [STAThread]
         static void Main(string[] args)
@@ -21,11 +25,18 @@ namespace osuLoader
                 return;
             }
 
-            if (File.Exists("bancho.txt")) banchoServer = File.ReadAllLines("bancho.txt")[0];
+            if (File.Exists("server.txt"))
+            {
+                string[] serverLines = File.ReadAllLines("server.txt");
+
+                mainServer   = serverLines[0];
+                banchoServer = serverLines[1];
+                avatarServer = serverLines[2];
+            }
 
             Console.Write("Loading osu! assembly... ");
 
-            Assembly asm = Assembly.LoadFile(osuPath);
+            asm = Assembly.LoadFile(osuPath);
 
             Console.WriteLine("Loaded!");
 
@@ -37,31 +48,34 @@ namespace osuLoader
 
             Type Color = asm.GetType("Microsoft.Xna.Framework.Graphics.Color");
 
-            MethodInfo FullPath         = OsuMain.GetMethod(AsmEncrypt.method_FullPath, BindingFlags.Static | BindingFlags.NonPublic);
-            MethodInfo FullPath_patched = typeof(MthdPatch).GetMethod("FullPath");
+            MethodInfo OsuMain_FullPath         = OsuMain.GetMethod(AsmEncrypt.method_OsuMain_FullPath, BindingFlags.Static | BindingFlags.NonPublic);
+            MethodInfo OsuMain_FullPath_patched = typeof(MthdPatch).GetMethod("OsuMain_FullPath");
 
-            MethodInfo Filename         = OsuMain.GetMethod(AsmEncrypt.method_Filename, BindingFlags.Static | BindingFlags.NonPublic);
-            MethodInfo Filename_patched = typeof(MthdPatch).GetMethod("Filename");
+            MethodInfo OsuMain_Filename         = OsuMain.GetMethod(AsmEncrypt.method_OsuMain_Filename, BindingFlags.Static | BindingFlags.NonPublic);
+            MethodInfo OsuMain_Filename_patched = typeof(MthdPatch).GetMethod("OsuMain_Filename");
 
-            MethodInfo checkCertificate         = pWebRequest.GetMethod(AsmEncrypt.method_checkCertificate, BindingFlags.Instance | BindingFlags.NonPublic);
-            MethodInfo checkCertificate_patched = typeof(MthdPatch).GetMethod("checkCertificate");
+            MethodInfo pWebRequest_set_Url         = pWebRequest.GetMethod(AsmEncrypt.method_pWebRequest_set_Url, BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo pWebRequest_set_Url_patched = typeof(MthdPatch).GetMethod("pWebRequest_set_Url");
 
-            MethodInfo SetServer   = BanchoClient.GetMethod(AsmEncrypt.method_SetServer, BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(string[]) }, null);
-            MethodInfo ShowMessage = NotificationManager.GetMethod(AsmEncrypt.method_ShowMessage, BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(string), Color, typeof(int), VoidDelegate }, null);
+            MethodInfo pWebRequest_checkCertificate         = pWebRequest.GetMethod(AsmEncrypt.method_pWebRequest_checkCertificate, BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo pWebRequest_checkCertificate_patched = typeof(MthdPatch).GetMethod("pWebRequest_checkCertificate");
+
+            MethodInfo BanchoClient_SetServer          = BanchoClient.GetMethod(AsmEncrypt.method_BanchoClient_SetServer, BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(string[]) }, null);
+            MethodInfo NotificationManager_ShowMessage = NotificationManager.GetMethod(AsmEncrypt.method_NotificationManager_ShowMessage, BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(string), Color, typeof(int), VoidDelegate }, null);
 
             unsafe
             {
                 // Patch out executable checks
                 Console.Write("Patching executable checks... ");
 
-                int* p_FullPath         = (int*)FullPath.MethodHandle.Value.ToPointer()         + 2;
-                int* p_FullPath_patched = (int*)FullPath_patched.MethodHandle.Value.ToPointer() + 2;
+                int* p_OsuMain_FullPath         = (int*)OsuMain_FullPath.MethodHandle.Value.ToPointer()         + 2;
+                int* p_OsuMain_FullPath_patched = (int*)OsuMain_FullPath_patched.MethodHandle.Value.ToPointer() + 2;
 
-                int* p_Filename         = (int*)Filename.MethodHandle.Value.ToPointer()         + 2;
-                int* p_Filename_patched = (int*)Filename_patched.MethodHandle.Value.ToPointer() + 2;
+                int* p_OsuMain_Filename         = (int*)OsuMain_Filename.MethodHandle.Value.ToPointer()         + 2;
+                int* p_OsuMain_Filename_patched = (int*)OsuMain_Filename_patched.MethodHandle.Value.ToPointer() + 2;
 
-                *p_FullPath  = *p_FullPath_patched;
-                *p_Filename  = *p_Filename_patched;
+                *p_OsuMain_FullPath  = *p_OsuMain_FullPath_patched;
+                *p_OsuMain_Filename  = *p_OsuMain_Filename_patched;
 
                 Console.WriteLine("Patched!");
 
@@ -70,10 +84,14 @@ namespace osuLoader
                 // Patch out certificate checks
                 Console.Write("Patching certificate checks... ");
 
-                int* p_checkCertificate         = (int*)checkCertificate.MethodHandle.Value.ToPointer()         + 2;
-                int* p_checkCertificate_patched = (int*)checkCertificate_patched.MethodHandle.Value.ToPointer() + 2;
+                int* p_pWebRequest_set_Url         = (int*)pWebRequest_set_Url.MethodHandle.Value.ToPointer()         + 2;
+                int* p_pWebRequest_set_Url_patched = (int*)pWebRequest_set_Url_patched.MethodHandle.Value.ToPointer() + 2;
 
-                *p_checkCertificate = *p_checkCertificate_patched;
+                int* p_pWebRequest_checkCertificate         = (int*)pWebRequest_checkCertificate.MethodHandle.Value.ToPointer()         + 2;
+                int* p_pWebRequest_checkCertificate_patched = (int*)pWebRequest_checkCertificate_patched.MethodHandle.Value.ToPointer() + 2;
+
+                *p_pWebRequest_set_Url          = *p_pWebRequest_set_Url_patched;
+                *p_pWebRequest_checkCertificate = *p_pWebRequest_checkCertificate_patched;
 
                 Console.WriteLine("Patched!");
 
@@ -82,12 +100,12 @@ namespace osuLoader
                 // Set server endpoints
                 Console.Write("Setting server endpoints... ");
 
-                SetServer.Invoke(null, new object[] { new string[] { banchoServer } });
+                BanchoClient_SetServer.Invoke(null, new object[] { new string[] { $"https://{banchoServer}" } });
 
                 Console.WriteLine("Done!");
             }
 
-            ShowMessage.Invoke(null, new object[] { "osu!Loader is now running.", Color.GetMethod("get_Orange", BindingFlags.Static | BindingFlags.Public).Invoke(null, null), 20000, null });
+            NotificationManager_ShowMessage.Invoke(null, new object[] { "osu!Loader is now running.", Color.GetMethod("get_Orange", BindingFlags.Static | BindingFlags.Public).Invoke(null, null), 20000, null });
 
             new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess).Assert();
             asm.EntryPoint.Invoke(null, null);
