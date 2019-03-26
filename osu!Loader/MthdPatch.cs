@@ -12,6 +12,11 @@ namespace osuLoader
         {
             Assembly asm = Program.asm;
 
+            Type      OsuMain              = asm.GetType(AsmEncrypt.class_OsuMain);
+            FieldInfo OsuMain_startupValue = OsuMain.GetField(AsmEncrypt.field_OsuMain_startupValue, BindingFlags.Static | BindingFlags.NonPublic);
+
+            Console.WriteLine($"StartupValue: {OsuMain_startupValue.GetValue(null)}");
+
             Type      pWebRequest     = asm.GetType(AsmEncrypt.class_pWebRequest);
             FieldInfo pWebRequest_url = pWebRequest.GetField(AsmEncrypt.field_pWebRequest_url, BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -20,7 +25,7 @@ namespace osuLoader
             if (value.Contains("osu.ppy.sh")) value = value.Replace("osu.ppy.sh", Program.mainServer);
             if (value.Contains("a.ppy.sh"))   value = value.Replace("a.ppy.sh",   Program.avatarServer);
 
-            //Console.WriteLine(value);
+            Console.WriteLine($"URL: {value}");
 
             pWebRequest_url.SetValue(this, value);
         }

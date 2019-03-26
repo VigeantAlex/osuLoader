@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using System.Security.Permissions;
+using System.Threading;
 
 namespace osuLoader
 {
@@ -74,8 +75,8 @@ namespace osuLoader
                 int* p_OsuMain_Filename         = (int*)OsuMain_Filename.MethodHandle.Value.ToPointer()         + 2;
                 int* p_OsuMain_Filename_patched = (int*)OsuMain_Filename_patched.MethodHandle.Value.ToPointer() + 2;
 
-                *p_OsuMain_FullPath  = *p_OsuMain_FullPath_patched;
-                *p_OsuMain_Filename  = *p_OsuMain_Filename_patched;
+                *p_OsuMain_FullPath = *p_OsuMain_FullPath_patched;
+                *p_OsuMain_Filename = *p_OsuMain_Filename_patched;
 
                 Console.WriteLine("Patched!");
 
