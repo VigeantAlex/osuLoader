@@ -20,7 +20,7 @@ namespace osuLoader
             if (value.Contains("osu.ppy.sh")) value = value.Replace("osu.ppy.sh", Program.mainServer);
             if (value.Contains("a.ppy.sh"))   value = value.Replace("a.ppy.sh",   Program.avatarServer);
 
-            Console.WriteLine(value);
+            //Console.WriteLine(value);
 
             pWebRequest_url.SetValue(this, value);
         }
