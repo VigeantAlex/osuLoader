@@ -7,7 +7,7 @@
     <ProjectGuid>{D75DD062-5446-4418-86ED-58E5782765BD}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>osuLoader</RootNamespace>
-    <AssemblyName>osu!Loader</AssemblyName>
+    <AssemblyName>osu.Loader</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
