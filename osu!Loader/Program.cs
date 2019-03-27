@@ -13,6 +13,8 @@ namespace osuLoader
         public static string banchoServer = "c.navisu.moe";
         public static string avatarServer = "a.navisu.moe";
 
+        public static bool useHttps = true;
+
         public static Assembly asm;
 
         [STAThread]
@@ -34,7 +36,7 @@ namespace osuLoader
             if (File.Exists("server.txt"))
             {
                 string[] serverLines = File.ReadAllLines("server.txt");
-                if (serverLines.Length != 3)
+                if (serverLines.Length < 3)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("Invalid server file!");
@@ -46,6 +48,8 @@ namespace osuLoader
                 mainServer   = serverLines[0];
                 banchoServer = serverLines[1];
                 avatarServer = serverLines[2];
+
+                if (serverLines.Length >= 4) useHttps = bool.Parse(serverLines[3]);
             }
 
             Console.Write("Loading osu! assembly... ");

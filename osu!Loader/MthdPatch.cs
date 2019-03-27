@@ -21,6 +21,13 @@ namespace osuLoader
             if (value.Contains("a.ppy.sh"))                                 value = value.Replace("a.ppy.sh",   Program.avatarServer);
             if (value.StartsWith("https://c") && value.EndsWith(".ppy.sh")) value = $"https://{Program.banchoServer}";
 
+            if (!Program.useHttps)
+                value = value.Replace("https://", "http://");
+            else
+                value = value.Replace("http://", "https://");
+
+            Console.WriteLine(value);
+
             pWebRequest_url.SetValue(this, value);
         }
 
