@@ -41,11 +41,9 @@ namespace osuLoader
 
             Console.WriteLine("Loaded!");
 
-            Type OsuMain             = asm.GetType(AsmEncrypt.class_OsuMain);
-            Type pWebRequest         = asm.GetType(AsmEncrypt.class_pWebRequest);
-            Type BanchoClient        = asm.GetType(AsmEncrypt.class_BanchoClient);
-            Type VoidDelegate        = asm.GetType(AsmEncrypt.delegate_VoidDelegate);
-            Type NotificationManager = asm.GetType(AsmEncrypt.class_NotificationManager);
+            Type OsuMain      = asm.GetType(AsmEncrypt.class_OsuMain);
+            Type pWebRequest  = asm.GetType(AsmEncrypt.class_pWebRequest);
+            Type BanchoClient = asm.GetType(AsmEncrypt.class_BanchoClient);
 
             Type Color = asm.GetType("Microsoft.Xna.Framework.Graphics.Color");
 
@@ -61,8 +59,7 @@ namespace osuLoader
             MethodInfo pWebRequest_checkCertificate         = pWebRequest.GetMethod(AsmEncrypt.method_pWebRequest_checkCertificate, BindingFlags.Instance | BindingFlags.NonPublic);
             MethodInfo pWebRequest_checkCertificate_patched = typeof(MthdPatch).GetMethod("pWebRequest_checkCertificate");
 
-            MethodInfo BanchoClient_SetServer          = BanchoClient.GetMethod(AsmEncrypt.method_BanchoClient_SetServer, BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(string[]) }, null);
-            MethodInfo NotificationManager_ShowMessage = NotificationManager.GetMethod(AsmEncrypt.method_NotificationManager_ShowMessage, BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(string), Color, typeof(int), VoidDelegate }, null);
+            MethodInfo BanchoClient_SetServer = BanchoClient.GetMethod(AsmEncrypt.method_BanchoClient_SetServer, BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(string[]) }, null);
 
             unsafe
             {
@@ -105,8 +102,6 @@ namespace osuLoader
 
                 Console.WriteLine("Done!");
             }
-
-            NotificationManager_ShowMessage.Invoke(null, new object[] { "osu!Loader is now running.", Color.GetMethod("get_Orange", BindingFlags.Static | BindingFlags.Public).Invoke(null, null), 20000, null });
 
             new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess).Assert();
             asm.EntryPoint.Invoke(null, null);
