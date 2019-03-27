@@ -2,7 +2,6 @@
 using System.IO;
 using System.Reflection;
 using System.Security.Permissions;
-using System.Threading;
 
 namespace osuLoader
 {
@@ -19,6 +18,8 @@ namespace osuLoader
         [STAThread]
         static void Main(string[] args)
         {
+            Console.ForegroundColor = ConsoleColor.White;
+
             if (!File.Exists(osuPath))
             {
                 Console.WriteLine("osu!Loader cannot run without \"osu!.exe\", please place it in the same path as osu!Loader.");
@@ -39,13 +40,12 @@ namespace osuLoader
 
             asm = Assembly.LoadFile(osuPath);
 
+            Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Loaded!");
+            Console.ForegroundColor = ConsoleColor.White;
 
-            Type OsuMain      = asm.GetType(AsmEncrypt.class_OsuMain);
-            Type pWebRequest  = asm.GetType(AsmEncrypt.class_pWebRequest);
-            Type BanchoClient = asm.GetType(AsmEncrypt.class_BanchoClient);
-
-            Type Color = asm.GetType("Microsoft.Xna.Framework.Graphics.Color");
+            Type OsuMain     = asm.GetType(AsmEncrypt.class_OsuMain);
+            Type pWebRequest = asm.GetType(AsmEncrypt.class_pWebRequest);
 
             MethodInfo OsuMain_FullPath         = OsuMain.GetMethod(AsmEncrypt.method_OsuMain_FullPath, BindingFlags.Static | BindingFlags.NonPublic);
             MethodInfo OsuMain_FullPath_patched = typeof(MthdPatch).GetMethod("OsuMain_FullPath");
@@ -58,8 +58,6 @@ namespace osuLoader
 
             MethodInfo pWebRequest_checkCertificate         = pWebRequest.GetMethod(AsmEncrypt.method_pWebRequest_checkCertificate, BindingFlags.Instance | BindingFlags.NonPublic);
             MethodInfo pWebRequest_checkCertificate_patched = typeof(MthdPatch).GetMethod("pWebRequest_checkCertificate");
-
-            MethodInfo BanchoClient_SetServer = BanchoClient.GetMethod(AsmEncrypt.method_BanchoClient_SetServer, BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(string[]) }, null);
 
             unsafe
             {
@@ -75,12 +73,14 @@ namespace osuLoader
                 *p_OsuMain_FullPath = *p_OsuMain_FullPath_patched;
                 *p_OsuMain_Filename = *p_OsuMain_Filename_patched;
 
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("Patched!");
+                Console.ForegroundColor = ConsoleColor.White;
 
                 /******/
 
                 // Patch out certificate checks
-                Console.Write("Patching certificate checks... ");
+                Console.Write("Patching URL & certificate checks... ");
 
                 int* p_pWebRequest_set_Url         = (int*)pWebRequest_set_Url.MethodHandle.Value.ToPointer()         + 2;
                 int* p_pWebRequest_set_Url_patched = (int*)pWebRequest_set_Url_patched.MethodHandle.Value.ToPointer() + 2;
@@ -91,16 +91,9 @@ namespace osuLoader
                 *p_pWebRequest_set_Url          = *p_pWebRequest_set_Url_patched;
                 *p_pWebRequest_checkCertificate = *p_pWebRequest_checkCertificate_patched;
 
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("Patched!");
-
-                /******/
-
-                // Set server endpoints
-                Console.Write("Setting server endpoints... ");
-
-                BanchoClient_SetServer.Invoke(null, new object[] { new string[] { $"https://{banchoServer}" } });
-
-                Console.WriteLine("Done!");
+                Console.ForegroundColor = ConsoleColor.White;
             }
 
             new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess).Assert();
