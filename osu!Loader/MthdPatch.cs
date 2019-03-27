@@ -26,8 +26,6 @@ namespace osuLoader
             else
                 value = value.Replace("http://", "https://");
 
-            Console.WriteLine(value);
-
             pWebRequest_url.SetValue(this, value);
         }
 
