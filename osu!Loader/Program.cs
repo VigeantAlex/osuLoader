@@ -1,13 +1,18 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Security.Permissions;
+using System.Text;
 
 namespace osuLoader
 {
     class Program
     {
+        public const string loaderDir = "osu.Loader-Data/";
+
         public static string osuPath = Path.Combine(Directory.GetCurrentDirectory(), "osu!.exe");
+        public static string osuHash = getOsuHash();
 
         public static string mainServer   = "navisu.moe";
         public static string banchoServer = "c.navisu.moe";
@@ -20,45 +25,28 @@ namespace osuLoader
         [STAThread]
         static void Main(string[] args)
         {
-            Console.ForegroundColor = ConsoleColor.White;
+            if (!Directory.Exists(loaderDir)) Directory.CreateDirectory(loaderDir);
 
             // Check if osu! executable exists.
             if (!File.Exists(osuPath))
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("osu!Loader cannot run without \"osu!.exe\", please place it in the same path as osu!Loader.");
-                Console.ForegroundColor = ConsoleColor.White;
+                Logger.WriteError("osu!Loader cannot run without \"osu!.exe\", please place it in the same path as osu!Loader.");
                 Console.ReadKey();
                 return;
             }
 
-            // Check if server file exists, if it does, load it.
-            if (File.Exists("server.dat"))
-            {
-                string[] serverLines = File.ReadAllLines("server.dat");
-                if (serverLines.Length < 3)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Invalid server file!");
-                    Console.ForegroundColor = ConsoleColor.White;
-                    Console.ReadKey();
-                    return;
-                }
-
-                mainServer   = serverLines[0];
-                banchoServer = serverLines[1];
-                avatarServer = serverLines[2];
-
-                if (serverLines.Length >= 4) useHttps = bool.Parse(serverLines[3]);
-            }
-
-            Console.Write("Loading osu! assembly... ");
+            Logger.WriteNotice("Loading osu! assembly... ", false);
 
             asm = Assembly.LoadFile(osuPath); // Load assembly
 
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Loaded!");
-            Console.ForegroundColor = ConsoleColor.White;
+            Logger.WriteSuccess("Loaded!");
+
+            if (!AsmEncrypt.Load(osuHash))
+            {
+                Logger.WriteError($"It looks like your osu! version is unsupported by osu!Loader, sorry! osuHash = {osuHash}");
+                Console.ReadKey();
+                return;
+            }
 
             // OsuMain
             MethodInfo OsuMain_FullPath         = null;
@@ -77,28 +65,44 @@ namespace osuLoader
             // Fetch methods
             try
             {
-                Type OsuMain     = asm.GetType(AsmEncrypt.class_OsuMain);
-                Type pWebRequest = asm.GetType(AsmEncrypt.class_pWebRequest);
+                Type OsuMain     = asm.GetType(AsmEncrypt.symbolDictionary["class_OsuMain"]);
+                Type pWebRequest = asm.GetType(AsmEncrypt.symbolDictionary["class_pWebRequest"]);
 
-                OsuMain_FullPath         = OsuMain.GetMethod(AsmEncrypt.method_OsuMain_FullPath, BindingFlags.Static | BindingFlags.NonPublic);
+                OsuMain_FullPath         = OsuMain.GetMethod(AsmEncrypt.symbolDictionary["method_OsuMain_FullPath"], BindingFlags.Static | BindingFlags.NonPublic);
                 OsuMain_FullPath_patched = typeof(MthdPatch).GetMethod("OsuMain_FullPath");
 
-                OsuMain_Filename         = OsuMain.GetMethod(AsmEncrypt.method_OsuMain_Filename, BindingFlags.Static | BindingFlags.NonPublic);
+                OsuMain_Filename         = OsuMain.GetMethod(AsmEncrypt.symbolDictionary["method_OsuMain_Filename"], BindingFlags.Static | BindingFlags.NonPublic);
                 OsuMain_Filename_patched = typeof(MthdPatch).GetMethod("OsuMain_Filename");
 
-                pWebRequest_set_Url         = pWebRequest.GetMethod(AsmEncrypt.method_pWebRequest_set_Url, BindingFlags.Instance | BindingFlags.NonPublic);
+                pWebRequest_set_Url         = pWebRequest.GetMethod(AsmEncrypt.symbolDictionary["method_pWebRequest_set_Url"], BindingFlags.Instance | BindingFlags.NonPublic);
                 pWebRequest_set_Url_patched = typeof(MthdPatch).GetMethod("pWebRequest_set_Url");
 
-                pWebRequest_checkCertificate         = pWebRequest.GetMethod(AsmEncrypt.method_pWebRequest_checkCertificate, BindingFlags.Instance | BindingFlags.NonPublic);
+                pWebRequest_checkCertificate         = pWebRequest.GetMethod(AsmEncrypt.symbolDictionary["method_pWebRequest_checkCertificate"], BindingFlags.Instance | BindingFlags.NonPublic);
                 pWebRequest_checkCertificate_patched = typeof(MthdPatch).GetMethod("pWebRequest_checkCertificate");
             }
             catch (Exception)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("It looks like your osu! version is unsupported by osu!Loader, sorry!");
-                Console.ForegroundColor = ConsoleColor.White;
+                Logger.WriteError($"It looks like your osu! version is unsupported by osu!Loader, sorry! osuHash = {osuHash}");
                 Console.ReadKey();
                 return;
+            }
+
+            // Check if server file exists, if it does, load it.
+            if (File.Exists($"{loaderDir}server.dat"))
+            {
+                string[] serverLines = File.ReadAllLines($"{loaderDir}server.dat");
+                if (serverLines.Length < 3)
+                {
+                    Logger.WriteError("Invalid server file!");
+                    Console.ReadKey();
+                    return;
+                }
+
+                mainServer   = serverLines[0];
+                banchoServer = serverLines[1];
+                avatarServer = serverLines[2];
+
+                if (serverLines.Length >= 4) useHttps = bool.Parse(serverLines[3]);
             }
 
             unsafe
@@ -106,7 +110,7 @@ namespace osuLoader
                 try
                 {
                     // Patch out executable checks
-                    Console.Write("Patching executable checks... ");
+                    Logger.WriteNotice("Patching executable checks... ", false);
 
                     int* p_OsuMain_FullPath         = (int*)OsuMain_FullPath.MethodHandle.Value.ToPointer()         + 2;
                     int* p_OsuMain_FullPath_patched = (int*)OsuMain_FullPath_patched.MethodHandle.Value.ToPointer() + 2;
@@ -117,33 +121,27 @@ namespace osuLoader
                     *p_OsuMain_FullPath = *p_OsuMain_FullPath_patched;
                     *p_OsuMain_Filename = *p_OsuMain_Filename_patched;
 
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Patched!");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    Logger.WriteSuccess("Patched!");
 
                     /******/
 
                     // Patch out certificate checks
-                    Console.Write("Patching URL & certificate checks... ");
+                    Logger.WriteNotice("Patching URL & certificate checks... ", false);
 
                     int* p_pWebRequest_set_Url         = (int*)pWebRequest_set_Url.MethodHandle.Value.ToPointer()         + 2;
                     int* p_pWebRequest_set_Url_patched = (int*)pWebRequest_set_Url_patched.MethodHandle.Value.ToPointer() + 2;
 
-                    int* p_pWebRequest_checkCertificate         = (int*)pWebRequest_checkCertificate.MethodHandle.Value.ToPointer() + 2;
+                    int* p_pWebRequest_checkCertificate         = (int*)pWebRequest_checkCertificate.MethodHandle.Value.ToPointer()         + 2;
                     int* p_pWebRequest_checkCertificate_patched = (int*)pWebRequest_checkCertificate_patched.MethodHandle.Value.ToPointer() + 2;
 
                     *p_pWebRequest_set_Url          = *p_pWebRequest_set_Url_patched;
                     *p_pWebRequest_checkCertificate = *p_pWebRequest_checkCertificate_patched;
 
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Patched!");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    Logger.WriteSuccess("Patched!");
                 }
                 catch (Exception)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("It looks like your osu! version is unsupported by osu!Loader, sorry!");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    Logger.WriteError($"It looks like your osu! version is unsupported by osu!Loader, sorry! osuHash = {osuHash}");
                     Console.ReadKey();
                     return;
                 }
@@ -151,6 +149,23 @@ namespace osuLoader
 
             new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess).Assert();
             asm.EntryPoint.Invoke(null, null);
+        }
+
+        private static string getOsuHash()
+        {
+            MD5CryptoServiceProvider hashAlgo = new MD5CryptoServiceProvider();
+            FileStream               osuExe   = new FileStream(osuPath, FileMode.Open, FileAccess.Read);
+
+            hashAlgo.ComputeHash(osuExe);
+            osuExe.Close();
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < hashAlgo.Hash.Length; i++)
+            {
+                sb.Append(hashAlgo.Hash[i].ToString("x2"));
+            }
+
+            return sb.ToString().ToLowerInvariant();
         }
     }
 }

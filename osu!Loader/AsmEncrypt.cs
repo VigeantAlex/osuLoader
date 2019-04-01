@@ -1,18 +1,34 @@
-﻿namespace osuLoader
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
+
+namespace osuLoader
 {
     class AsmEncrypt
     {
-        // Class
-        public const string class_OsuMain      = "#=zBRYjX1sAnSp374hhdQ==";     // osu
-        public const string class_pWebRequest  = "#=z$EsbtAnd5xviPAfNWFHq4pw="; // osu_common.Helpers
+        public static Dictionary<string, string> symbolDictionary = new Dictionary<string, string>();
 
-        // Field
-        public const string field_pWebRequest_url = "#=zpJXEsgU=";
+        public static bool Load(string exeHash)
+        {
+            if (File.Exists($"{Program.loaderDir}{exeHash}.dat"))
+            {
+                string[] asmSymbols = File.ReadAllLines($"{Program.loaderDir}{exeHash}.dat");
+                for (int i = 0; i < asmSymbols.Length; i++)
+                {
+                    string line = asmSymbols[i].Trim();
 
-        // Method
-        public const string method_OsuMain_FullPath             = "#=znpskdrI4O6kK";
-        public const string method_OsuMain_Filename             = "#=zNLZjf3mRdacx";
-        public const string method_pWebRequest_set_Url          = "#=z2gN1_HrGOdc5";
-        public const string method_pWebRequest_checkCertificate = "#=zEO_JVXZUna$7";
+                    if (line.StartsWith("//")) continue;
+                    if (line.Contains("//")) line = Regex.Split(line, "//")[0];
+
+                    string[] token = line.Replace(" ", string.Empty).Split(':');
+
+                    if (token[0].Length != 0) symbolDictionary.Add(token[0], token[1]);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
     }
 }

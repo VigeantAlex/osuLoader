@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsmEncrypt.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="MthdPatch.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

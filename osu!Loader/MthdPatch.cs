@@ -12,19 +12,22 @@ namespace osuLoader
         {
             Assembly asm = Program.asm;
 
-            Type      pWebRequest     = asm.GetType(AsmEncrypt.class_pWebRequest);
-            FieldInfo pWebRequest_url = pWebRequest.GetField(AsmEncrypt.field_pWebRequest_url, BindingFlags.Instance | BindingFlags.NonPublic);
+            Type pWebRequest = asm.GetType(AsmEncrypt.symbolDictionary["class_pWebRequest"]);
+            FieldInfo pWebRequest_url = pWebRequest.GetField(AsmEncrypt.symbolDictionary["field_pWebRequest_url"], BindingFlags.Instance | BindingFlags.NonPublic);
 
-            if (value.Contains("check-updates.php")) value = "https://pastebin.com/raw/A6SayCDD";
+            if (value.Contains("check-updates.php")) value = "https://pastebin.com/raw/A6SayCDD"; // Rewrite updates.
 
-            if (value.Contains("osu.ppy.sh"))                               value = value.Replace("osu.ppy.sh", Program.mainServer);
-            if (value.Contains("a.ppy.sh"))                                 value = value.Replace("a.ppy.sh",   Program.avatarServer);
+            // Change server URLs.
+            if (value.Contains("osu.ppy.sh")) value = value.Replace("osu.ppy.sh", Program.mainServer);
+            if (value.Contains("a.ppy.sh")) value = value.Replace("a.ppy.sh", Program.avatarServer);
             if (value.StartsWith("https://c") && value.EndsWith(".ppy.sh")) value = $"https://{Program.banchoServer}";
 
             if (!Program.useHttps)
                 value = value.Replace("https://", "http://");
             else
                 value = value.Replace("http://", "https://");
+
+            if (value.Contains("ppy.sh")) value = value.Replace("ppy.sh", "wangs.sh"); // Don't allow connections to offical osu! servers.
 
             pWebRequest_url.SetValue(this, value);
         }
