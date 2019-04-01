@@ -33,9 +33,9 @@ namespace osuLoader
             }
 
             // Check if server file exists, if it does, load it.
-            if (File.Exists("server.txt"))
+            if (File.Exists("server.dat"))
             {
-                string[] serverLines = File.ReadAllLines("server.txt");
+                string[] serverLines = File.ReadAllLines("server.dat");
                 if (serverLines.Length < 3)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
