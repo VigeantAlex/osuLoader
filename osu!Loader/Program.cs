@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -146,6 +146,9 @@ namespace osuLoader
                     return;
                 }
             }
+            // Closing with delay to not close the window instantly
+            Logger.WriteNotice("Closing in 3 seconds...", false);
+            Logger.Close(3000);
 
             new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess).Assert();
             asm.EntryPoint.Invoke(null, null);
